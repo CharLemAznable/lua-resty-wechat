@@ -2,6 +2,9 @@ local modname = "wechat_config"
 local _M = { _VERSION = '0.0.2' }
 _G[modname] = _M
 
+_M.appid = "" -- 公众平台AppID
+_M.appsecret = "" -- 公众平台AppSecret
+
 _M.token = "" -- 公众平台接口配置Token
 
 _M.autoreply = { -- 简单的自动回复设置

@@ -21,8 +21,6 @@ local mt = { __index = _M }
 
 --------------------------------------------------pre defines
 
-local cjson = require("cjson")
-local httpclient = require("resty.wechat.http").new()
 local ffi = require "ffi"
 local str_type = ffi.typeof("uint8_t[?]")
 local ffi_str = ffi.string
@@ -114,6 +112,9 @@ local ngx_req         = ngx.req
 local ngx_log         = ngx.log
 local ngx_print       = ngx.print
 local ngx_exit        = ngx.exit
+
+local cjson = require("cjson")
+local httpclient = require("resty.wechat.http").new()
 
 --------------------------------------------------private methods
 
@@ -435,7 +436,7 @@ end
 local function _build_response_body(rcvmsg, sndmsg)
   local msgtype = sndmsg.msgtype
   local fmts = sndmsgfmt[msgtype]
-  local n = sndmsg.articlecount and tonumber(sndmsg.articlecount) or 0
+  local n = tonumber(sndmsg.articlecount or 0)
   local xmltable, stream, err
 
   n = n > 10 and 10 or n
