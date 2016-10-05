@@ -39,7 +39,7 @@ function _M.process()
           return
         end
 
-        ngx_log(ngx.ERR, "succeed to set access token: ", res.body)
+        ngx_log(ngx.NOTICE, "succeed to set access token: ", res.body)
       end
     )
 

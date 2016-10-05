@@ -32,7 +32,9 @@
 
   使用Redis缓存AccessToken, 定时自动调用微信服务更新, 支持分布式.
 
-  TODO: API调用代理.
+  [proxy](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy.lua)
+
+  代理调用微信公众平台API接口, 自动添加access_token参数.
 
 ## 示例
 
@@ -50,6 +52,12 @@
           content_by_lua '
             require("resty.wechat.server").process()
           ';
+        }
+        location /wechat-proxy/ {
+          rewrite_by_lua '
+            require("resty.wechat.proxy").rewrite("wechat-proxy")
+          ';
+          proxy_pass https://api.weixin.qq.com/;
         }
       }
     }
