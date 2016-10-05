@@ -12,13 +12,13 @@
 
 ### 全局配置
 
-  [config](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/wechat/config.lua)
+  [config](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/config.lua)
 
   公众号全局配置数据, 包括接口Token, 自动回复设置.
 
 ### 作为服务端由微信请求并响应
 
-  [server](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/wechat/server.lua)
+  [server](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/server.lua)
 
   接收微信发出的普通消息和事件推送等请求, 并按配置做出响应, 未做对应配置则按微信要求返回success.
 
@@ -28,7 +28,11 @@
 
 ### 作为客户端代理调用微信公众号API
 
-  TODO: ACCESS_TOKEN中控和API调用统一处理.
+  [proxy_access_token](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy_access_token.lua)
+
+  使用Redis缓存AccessToken, 定时自动调用微信服务更新, 支持分布式.
+
+  TODO: API调用代理.
 
 ## 示例
 
@@ -38,8 +42,11 @@
       init_by_lua '
         require("resty.wechat.config")
       ';
+      init_worker_by_lua '
+        require("resty.wechat.proxy_access_token").process()
+      ';
       server {
-        location /wechat-proxy {
+        location /wechat-server {
           content_by_lua '
             require("resty.wechat.server").process()
           ';
