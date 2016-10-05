@@ -13,6 +13,7 @@ function _M.connect(self, opt)
     timeout = opt and opt.timeout or 3000, -- 3s
     maxIdleTimeout = opt and opt.maxIdleTimeout or 10000,
     poolSize = opt and opt.poolSize or 10,
+    distributedLockTimeout = opt and opt.distributedLockTimeout or 10,
   }
 
   local redis = require("resty.redis"):new()
@@ -23,26 +24,32 @@ function _M.connect(self, opt)
   return setmetatable({ redis = redis, conf = conf }, mt)
 end
 
-function _M.close(self)
+function _M.keepalive(self, maxIdleTimeout, poolSize)
   local redis = self.redis
   local conf = self.conf
-  return redis and redis:set_keepalive(conf.maxIdleTimeout, conf.poolSize)
+  return redis and redis:set_keepalive(maxIdleTimeout or conf.maxIdleTimeout, poolSize or conf.poolSize)
 end
 
-function _M.singleLockProcess(self, key, proc)
-  local current = ngx_now() * 1000
-  local timeout = wechat_config.lockTimeout or 10
-  local lock = self.redis:setnx(key, current + timeout * 1000 + 1)
+function _M.close(self)
+  local redis = self.redis
+  return redis and redis:close()
+end
+
+function _M.lockProcess(self, key, proc)
+  -- lock expire time
+  local timeout = self.conf.distributedLockTimeout
+  -- distributed lock
+  local lock = nil
   while not lock do
-    local lockValue = self.redis:get(key)
-    if not lockValue then
-      return
-    elseif ngx_now() * 1000 > tonumber(lockValue) and
-           ngx_now() * 1000 > tonumber(self.redis:getset(key, ngx_now() * 1000 + timeout * 1000 + 1)) then
+    lock = self.redis:setnx(key, ngx_now() * 1000 + timeout * 1000 + 1)
+    if lock or (ngx_now() * 1000 > tonumber(self.redis:get(key) or 0) and
+                ngx_now() * 1000 > tonumber(self.redis:getset(key, ngx_now() * 1000 + timeout * 1000 + 1) or 0)) then
       break
     else ngx_sleep(timeout) end
   end
-  proc() -- locked and do job
+  -- locked and do job
+  proc(self)
+  -- unlocked if needed
   if ngx_now() * 1000 < tonumber(self.redis:get(key) or 0) then
     self.redis:del(key)
   end

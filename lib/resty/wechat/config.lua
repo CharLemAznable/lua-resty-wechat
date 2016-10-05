@@ -7,7 +7,9 @@ _M.appsecret = "" -- 公众平台AppSecret
 
 _M.token = "" -- 公众平台接口配置Token
 
-_M.autoreply = { -- 简单的自动回复设置
+---------- Optional ----------
+
+-- _M.autoreply = { -- 简单的自动回复设置
   -- text     = {
   --   { cond = { content = "用户发出的文字消息全文匹配的正则表达式" },
   --     resp = { msgtype = "text或其他消息类型", 以及对应消息所需的字段和内容 }
@@ -23,8 +25,20 @@ _M.autoreply = { -- 简单的自动回复设置
   --     resp = { msgtype = "text或其他消息类型", 以及对应消息所需的字段和内容 }
   --   },
   -- },
-}
+-- }
 
-_M.autoreplyurl = "" -- 转发消息到指定URL, 对应服务可返回消息内容的JSON, 或直接返回success
+-- _M.autoreplyurl = "" -- 转发消息到指定URL, 对应服务可返回消息内容的JSON, 或直接返回success
+
+-- _M.redis = { -- redis配置
+--   host = "127.0.0.1",
+--   port = 6379,
+--   timeout = 3000,
+--   maxIdleTimeout = 10000,
+--   poolSize = 10,
+--   distributedLockTimeout = 10,
+-- }
+
+-- _M.accessTokenUpdateTime = 6000 -- 自动更新AccessToken的时间
+-- _M.accessTokenKey = _M.appid -- AccessToken存储在redis的key
 
 return _M
