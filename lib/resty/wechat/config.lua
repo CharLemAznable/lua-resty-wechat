@@ -41,4 +41,6 @@ _M.token = "" -- 公众平台接口配置Token
 -- _M.accessTokenUpdateTime = 6000 -- 自动更新AccessToken的时间
 -- _M.accessTokenKey = _M.appid -- AccessToken存储在redis的key
 
+-- _M.permitClientIPs = { "127.0.0.1" } -- 允许访问的客户端IP列表
+
 return _M

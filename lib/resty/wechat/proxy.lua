@@ -1,7 +1,6 @@
 local modname = "wechat_proxy"
 local _M = { _VERSION = '0.0.1' }
 _G[modname] = _M
-local mt = { __index = _M }
 
 local ngx_re_sub = ngx.re.sub
 local ngx_req_set_uri = ngx.req.set_uri

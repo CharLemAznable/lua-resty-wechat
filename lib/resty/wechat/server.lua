@@ -17,7 +17,6 @@
 local modname = "wechat_server"
 local _M = { _VERSION = '0.0.3' }
 _G[modname] = _M
-local mt = { __index = _M }
 
 --------------------------------------------------pre defines
 

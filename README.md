@@ -36,6 +36,10 @@
 
   代理调用微信公众平台API接口, 自动添加access_token参数.
 
+  [proxy_access_filter](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy_access_filter.lua)
+
+  过滤客户端IP, 限制请求来源.
+
 ## 示例
 
   nginx配置:
@@ -55,7 +59,10 @@
         }
         location /wechat-proxy/ {
           rewrite_by_lua '
-            require("resty.wechat.proxy").rewrite("wechat-proxy")
+            require("resty.wechat.proxy").rewrite("wechat-proxy") #参数为location路径
+          ';
+          access_by_lua '
+            require("resty.wechat.proxy_access_filter").filter()
           ';
           proxy_pass https://api.weixin.qq.com/;
         }
