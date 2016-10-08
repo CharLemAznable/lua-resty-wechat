@@ -10,6 +10,7 @@ local cjson = require("cjson")
 
 local updateurl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" .. wechat_config.appid .. "&secret=" .. wechat_config.appsecret
 local updateTime = wechat_config.accessTokenUpdateTime or 6000
+local pollingTime = wechat_config.accessTokenPollingTime or 600
 local accessTokenKey = wechat_config.accessTokenKey or wechat_config.appid
 
 function _M.process()
@@ -43,7 +44,7 @@ function _M.process()
       end
     )
 
-    local ok, err = ngx_timer_at(updateTime, updateAccessToken)
+    local ok, err = ngx_timer_at(pollingTime, updateAccessToken)
     if not ok then
       ngx_log(ngx.ERR, "failed to create the Access Token Updater: ", err)
       return

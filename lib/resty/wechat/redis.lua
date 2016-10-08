@@ -42,13 +42,17 @@ function _M.lockProcess(self, key, proc)
   local lock = nil
   while not lock do
     lock = self.redis:setnx(key, ngx_now() * 1000 + timeout * 1000 + 1)
-    if lock or (ngx_now() * 1000 > tonumber(self.redis:get(key) or 0) and
-                ngx_now() * 1000 > tonumber(self.redis:getset(key, ngx_now() * 1000 + timeout * 1000 + 1) or 0)) then
-      break
-    else ngx_sleep(timeout) end
+    if lock then break end
+
+    local locktime = self.redis:get(key)
+    if ngx_now() * 1000 > tonumber(locktime or 0) then -- if lock timeout, try to get lock.
+      local origin_locktime = self.redis:getset(key, ngx_now() * 1000 + timeout * 1000 + 1) -- set new lock timeout.
+      if ngx_now() * 1000 > tonumber(origin_locktime or 0) then break end -- if origin lock timeout, lock get.
+    end
+    ngx_sleep(timeout)
   end
   -- locked and do job
-  proc(self)
+  pcall(proc, self)
   -- unlocked if needed
   if ngx_now() * 1000 < tonumber(self.redis:get(key) or 0) then
     self.redis:del(key)
