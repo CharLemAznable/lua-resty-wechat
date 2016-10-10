@@ -8,7 +8,17 @@ local ngx_timer_at  = ngx.timer.at
 
 local cjson = require("cjson")
 
-local updateurl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" .. wechat_config.appid .. "&secret=" .. wechat_config.appsecret
+local updateurl = "https://api.weixin.qq.com/cgi-bin/token"
+local updateparam = {
+  method = "GET",
+  query = {
+    grant_type = "client_credential",
+    appid = wechat_config.appid,
+    secret = wechat_config.appsecret,
+  },
+  ssl_verify = false,
+  headers = { ["Content-Type"] = "application/x-www-form-urlencoded" },
+}
 local updateTime = wechat_config.accessTokenUpdateTime or 6000
 local pollingTime = wechat_config.accessTokenPollingTime or 600
 local accessTokenKey = wechat_config.accessTokenKey or wechat_config.appid
@@ -23,7 +33,7 @@ function _M.process()
           return
         end
 
-        local res, err = require("resty.wechat.http").new():request_uri(updateurl)
+        local res, err = require("resty.wechat.http").new():request_uri(updateurl, updateparam)
         if not res or err or tostring(res.status) ~= "200" then
           ngx_log(ngx.ERR, "failed to update access token: ", err or tostring(res.status))
           return

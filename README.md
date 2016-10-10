@@ -45,6 +45,9 @@
   nginx配置:
 
     http {
+      lua_package_path 'path to lua files';
+      resolver 114.114.114.114;
+
       init_by_lua '
         require("resty.wechat.config")
       ';
