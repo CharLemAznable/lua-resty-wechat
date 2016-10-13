@@ -10,14 +10,14 @@ function _M.connect(self, opt)
   local conf = {
     host = opt and opt.host or "127.0.0.1",
     port = opt and opt.port or 6379,
-    timeout = opt and opt.timeout or 3000, -- 3s
+    timeout = opt and opt.timeout or 5000,
     maxIdleTimeout = opt and opt.maxIdleTimeout or 10000,
     poolSize = opt and opt.poolSize or 10,
     distributedLockTimeout = opt and opt.distributedLockTimeout or 10,
   }
 
   local redis = require("resty.redis"):new()
-  redis:set_timeout(conf.timeout) -- 1 second
+  redis:set_timeout(conf.timeout)
   local ok, err = redis:connect(conf.host, conf.port)
   if not ok then return nil end
 
