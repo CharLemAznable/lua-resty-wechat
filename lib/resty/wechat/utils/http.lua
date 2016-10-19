@@ -24,7 +24,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 
-local http_headers = require "resty.wechat.http_headers"
+local http_headers = require "resty.wechat.utils.http_headers"
 
 local ngx_socket_tcp = ngx.socket.tcp
 local ngx_req = ngx.req

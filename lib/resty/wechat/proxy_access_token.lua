@@ -26,14 +26,14 @@ local accessTokenKey = wechat_config.accessTokenKey or wechat_config.appid
 function _M.process()
   local updateAccessToken
   updateAccessToken = function()
-    require("resty.wechat.redis"):connect(wechat_config.redis):lockProcess(
+    require("resty.wechat.utils.redis"):connect(wechat_config.redis):lockProcess(
       "accessTokenLocker",
       function(weredis)
         if os_time() < tonumber(weredis.redis:ttl(accessTokenKey) or 0) then
           return
         end
 
-        local res, err = require("resty.wechat.http").new():request_uri(updateurl, updateparam)
+        local res, err = require("resty.wechat.utils.http").new():request_uri(updateurl, updateparam)
         if not res or err or tostring(res.status) ~= "200" then
           ngx_log(ngx.ERR, "failed to update access token: ", err or tostring(res.status))
           return

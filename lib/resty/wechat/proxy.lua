@@ -14,7 +14,7 @@ function _M.rewrite(location_root)
   ngx_req_set_uri(uri)
 
   local args = ngx_req_get_uri_args()
-  args["access_token"] = require("resty.wechat.redis"):connect(wechat_config.redis).redis:get(accessTokenKey)
+  args["access_token"] = require("resty.wechat.utils.redis"):connect(wechat_config.redis).redis:get(accessTokenKey)
   ngx_req_set_uri_args(args)
 end
 

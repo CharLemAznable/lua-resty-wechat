@@ -29,7 +29,7 @@ typedef unsigned char u_char;
 u_char * ngx_hex_dump(u_char *dst, const u_char *src, size_t len);
 ]]
 
-local xml2lib = require "resty.wechat.xml2lib"
+local xml2lib = require "resty.wechat.utils.xml2lib"
 
 local rcvmsgfmt = {
   common  = { "tousername", "fromusername", "createtime", "msgtype" },
@@ -113,7 +113,7 @@ local ngx_print       = ngx.print
 local ngx_exit        = ngx.exit
 
 local cjson = require("cjson")
-local httpclient = require("resty.wechat.http").new()
+local httpclient = require("resty.wechat.utils.http").new()
 
 --------------------------------------------------private methods
 
