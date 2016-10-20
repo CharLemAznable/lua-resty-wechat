@@ -9,13 +9,15 @@ local ngx_req_set_uri_args = ngx.req.set_uri_args
 
 local accessTokenKey = wechat_config.accessTokenKey or wechat_config.appid
 
-function _M.rewrite(location_root)
-  local uri = ngx_re_sub(ngx.var.uri, "^/" .. location_root .. "(.*)", "$1", "o")
-  ngx_req_set_uri(uri)
+local mt = {
+  __call = function(_, location_root)
+    local uri = ngx_re_sub(ngx.var.uri, "^/" .. location_root .. "(.*)", "$1", "o")
+    ngx_req_set_uri(uri)
 
-  local args = ngx_req_get_uri_args()
-  args["access_token"] = require("resty.wechat.utils.redis"):connect(wechat_config.redis).redis:get(accessTokenKey)
-  ngx_req_set_uri_args(args)
-end
+    local args = ngx_req_get_uri_args()
+    args["access_token"] = require("resty.wechat.utils.redis"):connect(wechat_config.redis).redis:get(accessTokenKey)
+    ngx_req_set_uri_args(args)
+  end,
+}
 
-return _M
+return setmetatable(_M, mt)

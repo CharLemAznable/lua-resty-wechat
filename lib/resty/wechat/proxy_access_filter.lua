@@ -15,10 +15,12 @@ if not tableContainsValue(permitClientIPs, "127.0.0.1") then
   table.insert(permitClientIPs, "127.0.0.1")
 end
 
-function _M.filter()
-  if not tableContainsValue(permitClientIPs, ngx.var.remote_addr) then
-    ngx.exit(ngx.HTTP_FORBIDDEN)
-  end
-end
+local mt = {
+  __call = function(_)
+    if not tableContainsValue(permitClientIPs, ngx.var.remote_addr) then
+      ngx.exit(ngx.HTTP_FORBIDDEN)
+    end
+  end,
+}
 
-return _M
+return setmetatable(_M, mt)

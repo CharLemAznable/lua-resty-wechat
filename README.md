@@ -56,20 +56,20 @@
         require("resty.wechat.config")
       ';
       init_worker_by_lua '
-        require("resty.wechat.proxy_access_token").process()
+        require("resty.wechat.proxy_access_token")()
       ';
       server {
         location /wechat-server {
           content_by_lua '
-            require("resty.wechat.server").process()
+            require("resty.wechat.server")()
           ';
         }
         location /wechat-proxy/ {
           rewrite_by_lua '
-            require("resty.wechat.proxy").rewrite("wechat-proxy") -- 参数为location路径
+            require("resty.wechat.proxy")("wechat-proxy") -- 参数为location路径
           ';
           access_by_lua '
-            require("resty.wechat.proxy_access_filter").filter()
+            require("resty.wechat.proxy_access_filter")()
           ';
           proxy_pass https://api.weixin.qq.com/;
         }

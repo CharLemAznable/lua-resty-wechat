@@ -106,6 +106,7 @@ local table_concat    = table.concat
 local string_lower    = string.lower
 local string_match    = string.match
 local string_format   = string.format
+local string_gsub     = string.gsub
 local ngx_re_gsub     = ngx.re.gsub
 local ngx_req         = ngx.req
 local ngx_log         = ngx.log
@@ -473,85 +474,90 @@ local function _build_response_body(rcvmsg, sndmsg)
     _cleanup_items(n)
   end
 
+  -- parametric by rcvmsg
+  stream = string_gsub(stream, "%${([^}]+)}", rcvmsg)
+
   return stream
 end
 
 --------------------------------------------------public methods
 
-function _M.process()
-  -- request arguments
-  local args = ngx_req.get_uri_args()
-  -- request method
-  local method = ngx_req.get_method()
-  -- request body
-  ngx_req.read_body()
-  local body = ngx_req.get_body_data()
-  if body then
-    body = ngx_re_gsub(body, "[\r\n]*", "", "i")
-  end
+local mt = {
+  __call = function(_)
+    -- request arguments
+    local args = ngx_req.get_uri_args()
+    -- request method
+    local method = ngx_req.get_method()
+    -- request body
+    ngx_req.read_body()
+    local body = ngx_req.get_body_data()
+    if body then
+      body = ngx_re_gsub(body, "[\r\n]*", "", "i")
+    end
 
-  local params = {
-    signature = args.signature,
-    timestamp = args.timestamp,
-    nonce = args.nonce,
-    echostr = args.echostr,
-    token = wechat_config.token,
-    method = method,
-    body = body,
-    rcvmsg = {}
-  }
+    local params = {
+      signature = args.signature,
+      timestamp = args.timestamp,
+      nonce = args.nonce,
+      echostr = args.echostr,
+      token = wechat_config.token,
+      method = method,
+      body = body,
+      rcvmsg = {}
+    }
 
-  local ok, err, rcvmsg, reply, sndmsg, res
-  ok, err = _verify_request_params(params)
-  if not ok then
-    ngx_log(ngx.ERR, "failed to verify server: ", err)
-    return ngx_exit(ngx.HTTP_BAD_REQUEST)
-  end
+    local ok, err, rcvmsg, reply, sndmsg, res
+    ok, err = _verify_request_params(params)
+    if not ok then
+      ngx_log(ngx.ERR, "failed to verify server: ", err)
+      return ngx_exit(ngx.HTTP_BAD_REQUEST)
+    end
 
-  if params.method == "GET" then -- just verify
-    ngx_print(params.echostr)
-    return ngx_exit(ngx.HTTP_OK)
-  end
+    if params.method == "GET" then -- just verify
+      ngx_print(params.echostr)
+      return ngx_exit(ngx.HTTP_OK)
+    end
 
-  rcvmsg, err = _parse_request_body(params)
-  if err then
-    ngx_log(ngx.ERR, "failed to parse message: ", err)
-    return ngx_exit(ngx.HTTP_BAD_REQUEST)
-  end
-
-  reply = _match_auto_reply(rcvmsg)
-  if reply then
-    sndmsg, err = _build_response_body(rcvmsg, reply)
+    rcvmsg, err = _parse_request_body(params)
     if err then
-      ngx_log(ngx.ERR, "failed to build message: ", err)
-      return ngx_exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
-    end
-    ngx_print(sndmsg)
-    return ngx_exit(ngx.HTTP_OK)
-  end
-
-  if wechat_config.autoreplyurl and wechat_config.autoreplyurl ~= "" then
-    res, err = httpclient:request_uri(wechat_config.autoreplyurl, {
-      method = "POST", body = cjson.encode(rcvmsg)
-    })
-    if not res or err or tostring(res.status) ~= "200" then
-      ngx.log(ngx.ERR, "failed to request auto reply URL ", wechat_config.autoreplyurl, ": ", err or tostring(res.status))
-      return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+      ngx_log(ngx.ERR, "failed to parse message: ", err)
+      return ngx_exit(ngx.HTTP_BAD_REQUEST)
     end
 
-    if res.body and res.body ~= "" and string_lower(res.body) ~= "success" then
-      sndmsg, err = _build_response_body(rcvmsg, cjson.decode(res.body))
+    reply = _match_auto_reply(rcvmsg)
+    if reply then
+      sndmsg, err = _build_response_body(rcvmsg, reply)
       if err then
-        ngx.log(ngx.ERR, "failed to build message: ", err)
+        ngx_log(ngx.ERR, "failed to build message: ", err)
+        return ngx_exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+      end
+      ngx_print(sndmsg)
+      return ngx_exit(ngx.HTTP_OK)
+    end
+
+    if wechat_config.autoreplyurl and wechat_config.autoreplyurl ~= "" then
+      res, err = httpclient:request_uri(wechat_config.autoreplyurl, {
+        method = "POST", body = cjson.encode(rcvmsg)
+      })
+      if not res or err or tostring(res.status) ~= "200" then
+        ngx.log(ngx.ERR, "failed to request auto reply URL ", wechat_config.autoreplyurl, ": ", err or tostring(res.status))
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
       end
-      ngx.print(sndmsg)
-      return ngx.exit(res.status)
+
+      if res.body and res.body ~= "" and string_lower(res.body) ~= "success" then
+        sndmsg, err = _build_response_body(rcvmsg, cjson.decode(res.body))
+        if err then
+          ngx.log(ngx.ERR, "failed to build message: ", err)
+          return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+        end
+        ngx.print(sndmsg)
+        return ngx.exit(res.status)
+      end
     end
-  end
 
-  ngx_print("success")
-  return ngx_exit(ngx.HTTP_OK)
-end
+    ngx_print("success")
+    return ngx_exit(ngx.HTTP_OK)
+  end,
+}
 
-return _M
+return setmetatable(_M, mt)
