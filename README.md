@@ -42,7 +42,7 @@
 
 ### 代理网页授权获取用户基本信息
 
-  Doing
+  [oauth](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/oauth.lua)
 
 ## 示例
 
@@ -72,6 +72,21 @@
             require("resty.wechat.proxy_access_filter")()
           ';
           proxy_pass https://api.weixin.qq.com/;
+        }
+        location /wechat-baseoauth {
+          rewrite_by_lua '
+            require("resty.wechat.oauth").base_oauth("path to /wechat-redirect")
+          ';
+        }
+        location /wechat-useroauth {
+          rewrite_by_lua '
+            require("resty.wechat.oauth").userinfo_oauth("path to /wechat-redirect")
+          ';
+        }
+        location /wechat-redirect {
+          rewrite_by_lua '
+            require("resty.wechat.oauth").redirect()
+          ';
         }
       }
     }

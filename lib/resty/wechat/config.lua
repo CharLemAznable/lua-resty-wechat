@@ -44,4 +44,8 @@ _M.token = "" -- 公众平台接口配置Token
 
 -- _M.permitClientIPs = { "127.0.0.1" } -- 允许访问的客户端IP列表
 
+-- _M.base_oauth_key = "__rywy_base"         -- 网页授权跳转后保存用户基本信息的cookie的key
+-- _M.userinfo_oauth_key = "__rywy_userinfo" -- 网页授权跳转后保存用户完整信息的cookie的key
+-- _M.cookie_aes_key = "vFrItmxI9ct8JbAg"    -- 网页授权跳转后保存用户信息的cookie的AES密钥
+
 return _M
