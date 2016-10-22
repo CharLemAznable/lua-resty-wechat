@@ -128,11 +128,23 @@ function _M.redirect()
   end
 
   local encrypted_baseinfo = ngx.encode_base64(aescodec:encrypt(cjson.encode(baseinfo)))
-  cookie.set({ key = base_oauth_key, value = encrypted_baseinfo, expires = ngx.cookie_time(ngx.now() + 7200) })
+  cookie.set({
+    key = base_oauth_key,
+    value = encrypted_baseinfo,
+    expires = ngx.cookie_time(ngx.now() + 7200),
+    domain = wechat_config.cookie_domain,
+    path = wechat_config.cookie_path,
+  })
 
   if userinfo then
     local encrypted_userinfo = ngx.encode_base64(aescodec:encrypt(cjson.encode(userinfo)))
-    cookie.set({ key = userinfo_oauth_key, value = encrypted_userinfo, expires = ngx.cookie_time(ngx.now() + 7200) })
+    cookie.set({
+      key = userinfo_oauth_key,
+      value = encrypted_userinfo,
+      expires = ngx.cookie_time(ngx.now() + 7200),
+      domain = wechat_config.cookie_domain,
+      path = wechat_config.cookie_path,
+    })
   end
 
   ngx.log(ngx.ERR, cjson.encode(ngx.header.Set_Cookie))
