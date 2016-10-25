@@ -13,7 +13,7 @@ function _M.connect(self, opt)
     timeout = opt and opt.timeout or 5000,
     maxIdleTimeout = opt and opt.maxIdleTimeout or 10000,
     poolSize = opt and opt.poolSize or 10,
-    distributedLockTimeout = opt and opt.distributedLockTimeout or 10,
+    distributedLockTimeout = opt and opt.distributedLockTimeout or 20,
   }
 
   local redis = require("resty.redis"):new()

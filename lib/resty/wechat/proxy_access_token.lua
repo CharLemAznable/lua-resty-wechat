@@ -19,9 +19,21 @@ local updateparam = {
   ssl_verify = false,
   headers = { ["Content-Type"] = "application/x-www-form-urlencoded" },
 }
+
+local ticketurl = "https://api.weixin.qq.com/cgi-bin/ticket/getticket"
+local ticketparam = {
+  method = "GET",
+  query = {
+    type = "jsapi",
+  },
+  ssl_verify = false,
+  headers = { ["Content-Type"] = "application/x-www-form-urlencoded" },
+}
+
 local updateTime = wechat_config.accessTokenUpdateTime or 6000
 local pollingTime = wechat_config.accessTokenPollingTime or 600
 local accessTokenKey = wechat_config.accessTokenKey or wechat_config.appid
+local jsapiTicketKey = wechat_config.jsapiTicketKey or (wechat_config.appid .. "_ticket")
 
 local mt = {
   __call = function(_)
@@ -34,6 +46,7 @@ local mt = {
             return
           end
 
+          -- access_token time out, refresh
           local res, err = require("resty.wechat.utils.http").new():request_uri(updateurl, updateparam)
           if not res or err or tostring(res.status) ~= "200" then
             ngx_log(ngx.ERR, "failed to update access token: ", err or tostring(res.status))
@@ -52,6 +65,28 @@ local mt = {
           end
 
           ngx_log(ngx.NOTICE, "succeed to set access token: ", res.body)
+
+          -- refresh jsapi_ticket after refresh access_token
+          ticketparam.query.access_token = resbody.access_token
+          local res, err = require("resty.wechat.utils.http").new():request_uri(ticketurl, ticketparam)
+          ticketparam.query.access_token = nil
+          if not res or err or tostring(res.status) ~= "200" then
+            ngx_log(ngx.ERR, "failed to update jsapi ticket: ", err or tostring(res.status))
+            return
+          end
+          local resbody = cjson.decode(res.body)
+          if not resbody.ticket then
+            ngx_log(ngx.ERR, "failed to update jsapi ticket: ", res.body)
+            return
+          end
+
+          local ok, err = weredis.redis:setex(jsapiTicketKey, os_time() + updateTime - 1, resbody.ticket)
+          if not ok then
+            ngx_log(ngx.ERR, "failed to set jsapi ticket: ", err)
+            return
+          end
+
+          ngx_log(ngx.NOTICE, "succeed to set jsapi ticket: ", res.body)
         end
       )
 

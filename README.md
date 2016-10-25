@@ -30,7 +30,7 @@
 
   [proxy_access_token](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy_access_token.lua)
 
-  使用Redis缓存AccessToken, 定时自动调用微信服务更新, 支持分布式.
+  使用Redis缓存AccessToken和jsapi_ticket, 定时自动调用微信服务更新, 支持分布式更新.
 
   [proxy](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy.lua)
 
