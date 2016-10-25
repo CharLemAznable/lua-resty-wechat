@@ -21,14 +21,9 @@ _G[modname] = _M
 --------------------------------------------------pre defines
 
 local ffi = require "ffi"
-local str_type = ffi.typeof("uint8_t[?]")
 local ffi_str = ffi.string
 
-ffi.cdef[[
-typedef unsigned char u_char;
-u_char * ngx_hex_dump(u_char *dst, const u_char *src, size_t len);
-]]
-
+local hex = require "resty.wechat.utils.hex"
 local xml2lib = require "resty.wechat.utils.xml2lib"
 
 local rcvmsgfmt = {
@@ -118,13 +113,6 @@ local httpclient = require("resty.wechat.utils.http").new()
 
 --------------------------------------------------private methods
 
-local function _to_hex(s)
-  local len = #s * 2
-  local buf = ffi.new(str_type, len)
-  ffi.C.ngx_hex_dump(buf, s, #s)
-  return ffi_str(buf, len)
-end
-
 local function _check_signature(params)
   local signature = params.signature
   local timestamp = params.timestamp
@@ -135,7 +123,7 @@ local function _check_signature(params)
 
   local tmpstr = table_concat(tmptab)
   tmpstr = ngx.sha1_bin(tmpstr)
-  tmpstr = _to_hex(tmpstr)
+  tmpstr = hex(tmpstr)
 
   if tmpstr ~= signature then
     return nil, "signature mismatch"
