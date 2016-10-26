@@ -52,7 +52,9 @@ local mt = {
       result["jsApiList"] = string_split(urlcodec.decodeURI(api_list_param), "|")
     end
 
-    ngx.say(cjson.encode(result))
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(cjson.encode(result))
+    return ngx.exit(ngx.HTTP_OK)
   end,
 }
 

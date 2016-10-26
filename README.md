@@ -92,7 +92,8 @@
             require("resty.wechat.oauth").redirect()
           ';
         }
-        location /wechat-jssdk_config { # param: url, [api]
+        location /wechat-jssdk-config { # param: url, [api]
+          add_header Access-Control-Allow-Origin "if need cross-domain call";
           content_by_lua '
             require("resty.wechat.jssdk_config")()
           ';
@@ -103,23 +104,23 @@
   网页注入JS-SDK权限:
 
     $.ajax({
-      url: "url path to /wechat-jssdk_config",
+      url: "url path to /wechat-jssdk-config",
       data: {
         url: window.location.href,
         api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
       },
-      dataType: "json",
+      dataType: "json", // optional
       success: function(response) {
         wx.config(response);
       }
     });
 
     $.ajax({
-      url: "url path to /wechat-jssdk_config",
+      url: "url path to /wechat-jssdk-config",
       data: {
         url: window.location.href
       },
-      dataType: "json",
+      dataType: "json", // optional
       success: function(response) {
         wx.config({
           appId: response.appId,

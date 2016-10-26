@@ -538,7 +538,7 @@ local mt = {
           ngx.log(ngx.ERR, "failed to build message: ", err)
           return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
         end
-        ngx.print(sndmsg)
+        ngx_print(sndmsg)
         return ngx.exit(res.status)
       end
     end
