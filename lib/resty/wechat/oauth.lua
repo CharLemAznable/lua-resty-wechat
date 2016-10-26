@@ -94,9 +94,10 @@ end
 
 --------------------------------------------------public methods
 
-function _M.base_oauth(redirect_uri)
-  if not ngx.var.arg_goto then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
-  local target = urlcodec.decodeURI(ngx.var.arg_goto)
+function _M.base_oauth(redirect_uri, goto_param_name)
+  local goto_param = ngx.var["arg_" .. (goto_param_name or "goto")]
+  if not goto_param then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
+  local target = urlcodec.decodeURI(goto_param)
 
   if cookie.get(base_oauth_key) then
     return ngx.redirect(target, ngx.HTTP_MOVED_TEMPORARILY)
@@ -104,9 +105,10 @@ function _M.base_oauth(redirect_uri)
   return ngx.redirect(build_oauth_redirect_addr(redirect_uri, "snsapi_base", target), ngx.HTTP_MOVED_TEMPORARILY)
 end
 
-function _M.userinfo_oauth(redirect_uri)
-  if not ngx.var.arg_goto then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
-  local target = urlcodec.decodeURI(ngx.var.arg_goto)
+function _M.userinfo_oauth(redirect_uri, goto_param_name)
+  local goto_param = ngx.var["arg_" .. (goto_param_name or "goto")]
+  if not goto_param then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
+  local target = urlcodec.decodeURI(goto_param)
 
   if cookie.get(userinfo_oauth_key) then
     return ngx.redirect(target, ngx.HTTP_MOVED_TEMPORARILY)

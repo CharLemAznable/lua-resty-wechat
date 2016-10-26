@@ -44,6 +44,10 @@
 
   [oauth](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/oauth.lua)
 
+### JS-SDK权限签名
+
+  [jssdk_config](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/jssdk_config.lua)
+
 ## 示例
 
   nginx配置:
@@ -88,5 +92,24 @@
             require("resty.wechat.oauth").redirect()
           ';
         }
+        location /wechat-jssdk_config {
+          content_by_lua '
+            require("resty.wechat.jssdk_config")()
+          ';
+        }
       }
     }
+
+  网页注入JS-SDK权限:
+
+    $.ajax({
+      url: "path to /wechat-jssdk_config",
+      data: {
+        url: window.location.href,
+        api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
+      },
+      dataType: "json",
+      success: function(res) {
+        wx.config(res);
+      }
+    });
