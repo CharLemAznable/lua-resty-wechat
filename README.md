@@ -77,12 +77,12 @@
           ';
           proxy_pass https://api.weixin.qq.com/;
         }
-        location /wechat-baseoauth {
+        location /wechat-baseoauth { # param: goto
           rewrite_by_lua '
             require("resty.wechat.oauth").base_oauth("path to /wechat-redirect")
           ';
         }
-        location /wechat-useroauth {
+        location /wechat-useroauth { # param: goto
           rewrite_by_lua '
             require("resty.wechat.oauth").userinfo_oauth("path to /wechat-redirect")
           ';
@@ -92,7 +92,7 @@
             require("resty.wechat.oauth").redirect()
           ';
         }
-        location /wechat-jssdk_config {
+        location /wechat-jssdk_config { # param: url, [api]
           content_by_lua '
             require("resty.wechat.jssdk_config")()
           ';
@@ -103,13 +103,36 @@
   网页注入JS-SDK权限:
 
     $.ajax({
-      url: "path to /wechat-jssdk_config",
+      url: "url path to /wechat-jssdk_config",
       data: {
         url: window.location.href,
         api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
       },
       dataType: "json",
-      success: function(res) {
-        wx.config(res);
+      success: function(response) {
+        wx.config(response);
+      }
+    });
+
+    $.ajax({
+      url: "url path to /wechat-jssdk_config",
+      data: {
+        url: window.location.href
+      },
+      dataType: "json",
+      success: function(response) {
+        wx.config({
+          appId: response.appId,
+          timestamp: response.timestamp,
+          nonceStr: response.nonceStr,
+          signature: response.signature,
+          jsApiList: [
+              'onMenuShareTimeline',
+              'onMenuShareAppMessage',
+              'onMenuShareQQ',
+              'onMenuShareWeibo',
+              'onMenuShareQZone'
+          ]
+        });
       }
     });

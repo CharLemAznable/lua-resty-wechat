@@ -40,15 +40,19 @@ local mt = {
     table_insert(tmptab, "url=" .. url)
     table_sort(tmptab)
     local signature = hex(ngx.sha1_bin(table_concat(tmptab, "&")))
-    local jsApiList = string_split(urlcodec.decodeURI(ngx.var["arg_" .. (api_list_param_name or "api")]), "|")
 
-    ngx.say(cjson.encode({
+    local result = {
       appId = wechat_config.appid,
       timestamp = timestamp,
       nonceStr = noncestr,
       signature = signature,
-      jsApiList = jsApiList,
-    }))
+    }
+    local api_list_param = ngx.var["arg_" .. (api_list_param_name or "api")]
+    if api_list_param then
+      result["jsApiList"] = string_split(urlcodec.decodeURI(api_list_param), "|")
+    end
+
+    ngx.say(cjson.encode(result))
   end,
 }
 
