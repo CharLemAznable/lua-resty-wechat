@@ -92,7 +92,7 @@
             require("resty.wechat.oauth").redirect()
           ';
         }
-        location /wechat-jssdk-config { # param: url, [api]
+        location /wechat-jssdk-config { # GET/POST, param: url, [api]
           add_header Access-Control-Allow-Origin "if need cross-domain call";
           content_by_lua '
             require("resty.wechat.jssdk_config")()
@@ -109,7 +109,6 @@
         url: window.location.href,
         api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
       },
-      dataType: "json", // optional
       success: function(response) {
         wx.config(response);
       }
@@ -120,7 +119,6 @@
       data: {
         url: window.location.href
       },
-      dataType: "json", // optional
       success: function(response) {
         wx.config({
           appId: response.appId,
