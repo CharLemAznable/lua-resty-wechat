@@ -17,7 +17,11 @@ end
 
 local mt = {
   __call = function(_)
-    if not tableContainsValue(permitClientIPs, ngx.var.remote_addr) then
+    local real_ip = ngx.req.get_headers()["X-Real-IP"]
+    if not real_ip then real_ip = ngx.req.get_headers()["X-Forwarded-For"] end
+    if not real_ip then real_ip = ngx.var.remote_addr end
+
+    if not tableContainsValue(permitClientIPs, real_ip) then
       ngx.exit(ngx.HTTP_FORBIDDEN)
     end
   end,
