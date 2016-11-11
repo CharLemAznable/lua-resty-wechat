@@ -92,12 +92,18 @@ local function request_oauth_infomation(code)
   return { openid = baseinfo.openid }, userinfo
 end
 
+local function process_share_from_param(target)
+  local from_param = ngx.var.arg_from
+  if not from_param then return target end
+  return target .. (string.match(target, "?") and "&" or "?") .. "from=" .. from_param
+end
+
 --------------------------------------------------public methods
 
 function _M.base_oauth(redirect_uri, goto_param_name)
   local goto_param = ngx.var["arg_" .. (goto_param_name or "goto")]
   if not goto_param then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
-  local target = urlcodec.decodeURI(goto_param)
+  local target = process_share_from_param(urlcodec.decodeURI(goto_param))
 
   if cookie.get(base_oauth_key) then
     return ngx.redirect(target, ngx.HTTP_MOVED_TEMPORARILY)
@@ -108,7 +114,7 @@ end
 function _M.userinfo_oauth(redirect_uri, goto_param_name)
   local goto_param = ngx.var["arg_" .. (goto_param_name or "goto")]
   if not goto_param then return ngx_exit(ngx.HTTP_BAD_REQUEST) end
-  local target = urlcodec.decodeURI(goto_param)
+  local target = process_share_from_param(urlcodec.decodeURI(goto_param))
 
   if cookie.get(userinfo_oauth_key) then
     return ngx.redirect(target, ngx.HTTP_MOVED_TEMPORARILY)

@@ -59,6 +59,7 @@
       init_by_lua '
         require("resty.wechat.config")
       ';
+      lua_shared_dict dogs 1M; # 利用共享内存保持单例定时器
       init_worker_by_lua '
         require("resty.wechat.proxy_access_token")()
       ';

@@ -6,6 +6,13 @@ local mt = { __index = _M }
 local ngx_now   = ngx.now
 local ngx_sleep = ngx.sleep
 
+local function defaultReplyValue(originValue, defaultValue)
+  if originValue and originValue ~= null and originValue ~= ngx.null then
+    return originValue
+  end
+  return defaultValue
+end
+
 function _M.connect(self, opt)
   local conf = {
     host = opt and opt.host or "127.0.0.1",
@@ -42,19 +49,19 @@ function _M.lockProcess(self, key, proc)
   local lock = nil
   while not lock do
     lock = self.redis:setnx(key, ngx_now() * 1000 + timeout * 1000 + 1)
-    if lock then break end
+    if defaultReplyValue(lock, nil) then break end
 
     local locktime = self.redis:get(key)
-    if ngx_now() * 1000 > tonumber(locktime or 0) then -- if lock timeout, try to get lock.
+    if ngx_now() * 1000 > tonumber(defaultReplyValue(locktime, nil) or 0) then -- if lock timeout, try to get lock.
       local origin_locktime = self.redis:getset(key, ngx_now() * 1000 + timeout * 1000 + 1) -- set new lock timeout.
-      if ngx_now() * 1000 > tonumber(origin_locktime or 0) then break end -- if origin lock timeout, lock get.
+      if ngx_now() * 1000 > tonumber(defaultReplyValue(origin_locktime, nil) or 0) then break end -- if origin lock timeout, lock get.
     end
     ngx_sleep(timeout)
   end
   -- locked and do job
   pcall(proc, self)
   -- unlocked if needed
-  if ngx_now() * 1000 < tonumber(self.redis:get(key) or 0) then
+  if ngx_now() * 1000 < tonumber(defaultReplyValue(self.redis:get(key), nil) or 0) then
     self.redis:del(key)
   end
 end

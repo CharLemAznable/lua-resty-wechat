@@ -37,6 +37,9 @@ local jsapiTicketKey = wechat_config.jsapiTicketKey or (wechat_config.appid .. "
 
 local mt = {
   __call = function(_)
+    local ok, err = ngx.shared.wechat:add("updater", "1") -- Singleton worker
+    if not ok or err then return end
+
     local updateAccessToken
     updateAccessToken = function()
       require("resty.wechat.utils.redis"):connect(wechat_config.redis):lockProcess(
