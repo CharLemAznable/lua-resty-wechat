@@ -56,11 +56,14 @@
       lua_package_path 'path to lua files';
       resolver 114.114.114.114;
 
+      lua_shared_dict dogs 1M; # 利用共享内存保持单例定时器
       init_by_lua '
+        ngx.shared.wechat:delete("updater") -- 清除定时器标识
         require("resty.wechat.config")
       ';
-      lua_shared_dict dogs 1M; # 利用共享内存保持单例定时器
       init_worker_by_lua '
+        local ok, err = ngx.shared.wechat:add("updater", "1") -- 单进程启动定时器
+        if not ok or err then return end
         require("resty.wechat.proxy_access_token")()
       ';
       server {
