@@ -525,7 +525,8 @@ local mt = {
 
     if wechat_config.autoreplyurl and wechat_config.autoreplyurl ~= "" then
       res, err = httpclient:request_uri(wechat_config.autoreplyurl, {
-        method = "POST", body = cjson.encode(rcvmsg)
+        method = "POST", body = cjson.encode(rcvmsg),
+        headers = { ["Content-Type"] = "application/json" },
       })
       if not res or err or tostring(res.status) ~= "200" then
         ngx.log(ngx.ERR, "failed to request auto reply URL ", wechat_config.autoreplyurl, ": ", err or tostring(res.status))
