@@ -12,7 +12,8 @@ _M.token = "" -- 公众平台接口配置Token
 -- _M.autoreply = { -- 简单的自动回复设置
   -- text     = {
   --   { cond = { content = "用户发出的文字消息全文匹配的正则表达式" },
-  --     resp = { msgtype = "text或其他消息类型", 以及对应消息所需的字段和内容 }
+  --     resp = { msgtype = "text或其他消息类型", 以及对应消息所需的字段和内容 },
+  --     continue = true/false -- 消息是否透传到autoreplyurl
   --   },
   -- },
   -- image    = { },

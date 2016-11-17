@@ -109,7 +109,6 @@ local ngx_print       = ngx.print
 local ngx_exit        = ngx.exit
 
 local cjson = require("cjson")
-local httpclient = require("resty.wechat.utils.http").new()
 
 --------------------------------------------------private methods
 
@@ -305,7 +304,7 @@ local function _match_auto_reply(rcvmsg)
       end
 
       if match then
-        return reply.resp
+        return reply.resp, reply.continue
       end
     end
   end
@@ -512,7 +511,7 @@ local mt = {
       return ngx_exit(ngx.HTTP_BAD_REQUEST)
     end
 
-    reply = _match_auto_reply(rcvmsg)
+    reply, continue = _match_auto_reply(rcvmsg)
     if reply then
       sndmsg, err = _build_response_body(rcvmsg, reply)
       if err then
@@ -520,11 +519,11 @@ local mt = {
         return ngx_exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
       end
       ngx_print(sndmsg)
-      return ngx_exit(ngx.HTTP_OK)
+      if not continue then return ngx_exit(ngx.HTTP_OK) end
     end
 
     if wechat_config.autoreplyurl and wechat_config.autoreplyurl ~= "" then
-      res, err = httpclient:request_uri(wechat_config.autoreplyurl, {
+      res, err = require("resty.wechat.utils.http").new():request_uri(wechat_config.autoreplyurl, {
         method = "POST", body = cjson.encode(rcvmsg),
         headers = { ["Content-Type"] = "application/json" },
       })
@@ -533,7 +532,7 @@ local mt = {
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
       end
 
-      if res.body and res.body ~= "" and string_lower(res.body) ~= "success" then
+      if not reply and res.body and res.body ~= "" and string_lower(res.body) ~= "success" then
         sndmsg, err = _build_response_body(rcvmsg, cjson.decode(res.body))
         if err then
           ngx.log(ngx.ERR, "failed to build message: ", err)
@@ -544,7 +543,7 @@ local mt = {
       end
     end
 
-    ngx_print("success")
+    if not reply then ngx_print("success") end
     return ngx_exit(ngx.HTTP_OK)
   end,
 }
