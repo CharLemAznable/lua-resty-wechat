@@ -56,7 +56,7 @@
       lua_package_path 'path to lua files';
       resolver 114.114.114.114;
 
-      lua_shared_dict dogs 1M; # 利用共享内存保持单例定时器
+      lua_shared_dict wechat 1M; # 利用共享内存保持单例定时器
       init_by_lua '
         ngx.shared.wechat:delete("updater") -- 清除定时器标识
         require("resty.wechat.config")
