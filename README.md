@@ -139,3 +139,68 @@
         });
       }
     });
+
+  使用Java解析代理网页授权获得的cookie
+
+    Map authInfo = JSON.parseObject(decryptAES(unBase64("cookie value"), getKey("AES key")));
+
+    // 默认AES key: "vFrItmxI9ct8JbAg"
+    // 配置于config.lua -> cookie_aes_key
+
+    // 依赖方法
+
+    import com.alibaba.fastjson.JSON;
+    import com.google.common.base.Charsets;
+    import javax.crypto.Cipher;
+    import javax.crypto.spec.SecretKeySpec;
+    import java.security.Key;
+
+    public StringBuilder padding(String s, char letter, int repeats) {
+        StringBuilder sb = new StringBuilder(s);
+        while (repeats-- > 0) {
+            sb.append(letter);
+        }
+        return sb;
+    }
+
+    public String padding(String s) {
+        return padding(s, '=', s.length() % 4).toString();
+    }
+
+    public byte[] unBase64(String value) {
+        return org.apache.commons.codec.binary.Base64.decodeBase64(padding(value));
+    }
+
+    public String string(byte[] bytes) {
+        return new String(bytes, Charsets.UTF_8);
+    }
+
+    public String decryptAES(byte[] value, Key key) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] decrypted = cipher.doFinal(value);
+            return string(decrypted);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public byte[] bytes(String str) {
+        return str == null ? null : str.getBytes(Charsets.UTF_8);
+    }
+
+    public Key keyFromString(String keyString) {
+        return new SecretKeySpec(bytes(keyString), "AES");
+    }
+
+    public Key getKey(String key) {
+        if (key.length() >= 16) {
+            return keyFromString(key.substring(0, 16));
+        }
+        StringBuilder sb = new StringBuilder(key);
+        while (sb.length() < 16) {
+            sb.append(key);
+        }
+        return keyFromString(sb.toString().substring(0, 16));
+    }

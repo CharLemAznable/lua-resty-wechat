@@ -31,19 +31,25 @@ local rcvmsgfmt = {
   msgtype = {
     text     = { "content", "msgid" },
     image    = { "picurl", "msgid", "mediaid" },
-    voice    = { "mediaid", "format", "msgid", { "recognition" } },
+    voice    = { "mediaid", "format", "msgid", { "recognition", optional = true } },
     video    = { "mediaid", "thumbmediaid", "msgid" },
     location = { "location_x", "location_y", "scale", "label", "msgid" },
     link     = { "title", "description", "url", "msgid" },
     event    = { "event" }
   },
   event   = {
-    subscribe   = { { "eventkey" }, { "ticket" } },
-    scan        = { "eventkey", "ticket" },
-    unsubscribe = { { "eventkey" } },
-    location    = { "latitude", "longitude", "precision" },
-    click       = { "eventkey" },
-    view        = { "eventkey", "menuid" }
+    subscribe           = { { "eventkey", optional = true }, { "ticket", optional = true } },
+    scan                = { "eventkey", "ticket" },
+    unsubscribe         = { { "eventkey", optional = true } },
+    location            = { "latitude", "longitude", "precision" },
+    click               = { "eventkey" },
+    view                = { "eventkey", "menuid" },
+    scancode_push       = { "eventkey", { "scancodeinfo", subnodes = { "scantype", "scanresult" } } },
+    scancode_waitmsg    = { "eventkey", { "scancodeinfo", subnodes = { "scantype", "scanresult" } } },
+    location_select     = { "eventkey", { "sendlocationinfo", subnodes = { "location_x", "location_y", "scale", "label", "poiname" } } },
+    pic_sysphoto        = { "eventkey", { "sendpicsinfo", subnodes = { "count" } } },
+    pic_photo_or_album  = { "eventkey", { "sendpicsinfo", subnodes = { "count" } } },
+    pic_weixin          = { "eventkey", { "sendpicsinfo", subnodes = { "count" } } }
   }
 }
 
@@ -140,11 +146,15 @@ end
 
 --------------------------------------------------
 
-local function _parse_key(nodePtr, key, rcvmsg)
+local _parse_key, _parse_keytable
+
+_parse_key = function(nodePtr, key, rcvmsg)
   local node = nodePtr.node
   local name = ffi_str(node[0].name)
-  local optional = (type(key) == "table")
-  local k = optional and key[1] or key
+  local istable = (type(key) == "table")
+  local optional = istable and key.optional or false
+  local k = istable and key[1] or key
+  local subnodes = istable and key.subnodes or nil
 
   if string_lower(name) ~= k then -- case insensitive
     if not optional then
@@ -163,11 +173,20 @@ local function _parse_key(nodePtr, key, rcvmsg)
     return nil, "invalid subnode"
   end
 
-  if node[0].type ~= xml2lib.XML_TEXT_NODE and node[0].type ~= xml2lib.XML_CDATA_SECTION_NODE then
-    return nil, "invalid subnode type"
-  end
+  if not subnodes then
+    if node[0].type ~= xml2lib.XML_TEXT_NODE and node[0].type ~= xml2lib.XML_CDATA_SECTION_NODE then
+      return nil, "invalid subnode type"
+    end
 
-  rcvmsg[k] = ffi_str(node[0].content)
+    rcvmsg[k] = ffi_str(node[0].content)
+
+  else
+    local subnodePtr = { node = node }
+    local ok, err = _parse_keytable(subnodePtr, subnodes, rcvmsg)
+    if not ok then
+      return nil, err .. " when parsing " .. name .. " subnodes"
+    end
+  end
 
   node = node[0].parent
   if node[0].next ~= nil then
@@ -178,7 +197,7 @@ local function _parse_key(nodePtr, key, rcvmsg)
   return rcvmsg[k]
 end
 
-local function _parse_keytable(nodePtr, keytable, rcvmsg)
+_parse_keytable = function(nodePtr, keytable, rcvmsg)
   for i = 1, #keytable do
     local key = keytable[i]
 
@@ -528,18 +547,18 @@ local mt = {
         headers = { ["Content-Type"] = "application/json" },
       })
       if not res or err or tostring(res.status) ~= "200" then
-        ngx.log(ngx.ERR, "failed to request auto reply URL ", wechat_config.autoreplyurl, ": ", err or tostring(res.status))
-        return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+        ngx_log(ngx.ERR, "failed to request auto reply URL ", wechat_config.autoreplyurl, ": ", err or tostring(res.status))
+        return ngx_exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
       end
 
       if not reply and res.body and res.body ~= "" and string_lower(res.body) ~= "success" then
         sndmsg, err = _build_response_body(rcvmsg, cjson.decode(res.body))
         if err then
-          ngx.log(ngx.ERR, "failed to build message: ", err)
-          return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+          ngx_log(ngx.ERR, "failed to build message: ", err)
+          return ngx_exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
         end
         ngx_print(sndmsg)
-        return ngx.exit(res.status)
+        return ngx_exit(res.status)
       end
     end
 
