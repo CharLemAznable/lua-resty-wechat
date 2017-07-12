@@ -52,155 +52,161 @@
 
   nginx配置:
 
-    http {
-      lua_package_path 'path to lua files';
-      resolver 114.114.114.114;
+``` nginx
+http {
+  lua_package_path 'path to lua files';
+  resolver 114.114.114.114;
 
-      lua_shared_dict wechat 1M; # 利用共享内存保持单例定时器
-      init_by_lua '
-        ngx.shared.wechat:delete("updater") -- 清除定时器标识
-        require("resty.wechat.config")
+  lua_shared_dict wechat 1M; # 利用共享内存保持单例定时器
+  init_by_lua '
+    ngx.shared.wechat:delete("updater") -- 清除定时器标识
+    require("resty.wechat.config")
+  ';
+  init_worker_by_lua '
+    local ok, err = ngx.shared.wechat:add("updater", "1") -- 单进程启动定时器
+    if not ok or err then return end
+    require("resty.wechat.proxy_access_token")()
+  ';
+  server {
+    location /wechat-server {
+      content_by_lua '
+        require("resty.wechat.server")()
       ';
-      init_worker_by_lua '
-        local ok, err = ngx.shared.wechat:add("updater", "1") -- 单进程启动定时器
-        if not ok or err then return end
-        require("resty.wechat.proxy_access_token")()
-      ';
-      server {
-        location /wechat-server {
-          content_by_lua '
-            require("resty.wechat.server")()
-          ';
-        }
-        location /wechat-proxy/ {
-          rewrite_by_lua '
-            require("resty.wechat.proxy")("wechat-proxy") -- 参数为location路径
-          ';
-          access_by_lua '
-            require("resty.wechat.proxy_access_filter")()
-          ';
-          proxy_pass https://api.weixin.qq.com/;
-        }
-        location /wechat-baseoauth { # param: goto
-          rewrite_by_lua '
-            require("resty.wechat.oauth").base_oauth("path to /wechat-redirect")
-          ';
-        }
-        location /wechat-useroauth { # param: goto
-          rewrite_by_lua '
-            require("resty.wechat.oauth").userinfo_oauth("path to /wechat-redirect")
-          ';
-        }
-        location /wechat-redirect {
-          rewrite_by_lua '
-            require("resty.wechat.oauth").redirect()
-          ';
-        }
-        location /wechat-jssdk-config { # GET/POST, param: url, [api]
-          add_header Access-Control-Allow-Origin "if need cross-domain call";
-          content_by_lua '
-            require("resty.wechat.jssdk_config")()
-          ';
-        }
-      }
     }
+    location /wechat-proxy/ {
+      rewrite_by_lua '
+        require("resty.wechat.proxy")("wechat-proxy") -- 参数为location路径
+      ';
+      access_by_lua '
+        require("resty.wechat.proxy_access_filter")()
+      ';
+      proxy_pass https://api.weixin.qq.com/;
+    }
+    location /wechat-baseoauth { # param: goto
+      rewrite_by_lua '
+        require("resty.wechat.oauth").base_oauth("path to /wechat-redirect")
+      ';
+    }
+    location /wechat-useroauth { # param: goto
+      rewrite_by_lua '
+        require("resty.wechat.oauth").userinfo_oauth("path to /wechat-redirect")
+      ';
+    }
+    location /wechat-redirect {
+      rewrite_by_lua '
+        require("resty.wechat.oauth").redirect()
+      ';
+    }
+    location /wechat-jssdk-config { # GET/POST, param: url, [api]
+      add_header Access-Control-Allow-Origin "if need cross-domain call";
+      content_by_lua '
+        require("resty.wechat.jssdk_config")()
+      ';
+    }
+  }
+}
+```
 
   网页注入JS-SDK权限:
 
-    $.ajax({
-      url: "url path to /wechat-jssdk-config",
-      data: {
-        url: window.location.href,
-        api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
-      },
-      success: function(response) {
-        wx.config(response);
-      }
-    });
+``` javascript
+$.ajax({
+  url: "url path to /wechat-jssdk-config",
+  data: {
+    url: window.location.href,
+    api: "onMenuShareTimeline|onMenuShareAppMessage|onMenuShareQQ|onMenuShareWeibo|onMenuShareQZone"
+  },
+  success: function(response) {
+    wx.config(response);
+  }
+});
 
-    $.ajax({
-      url: "url path to /wechat-jssdk-config",
-      data: {
-        url: window.location.href
-      },
-      success: function(response) {
-        wx.config({
-          appId: response.appId,
-          timestamp: response.timestamp,
-          nonceStr: response.nonceStr,
-          signature: response.signature,
-          jsApiList: [
-              'onMenuShareTimeline',
-              'onMenuShareAppMessage',
-              'onMenuShareQQ',
-              'onMenuShareWeibo',
-              'onMenuShareQZone'
-          ]
-        });
-      }
+$.ajax({
+  url: "url path to /wechat-jssdk-config",
+  data: {
+    url: window.location.href
+  },
+  success: function(response) {
+    wx.config({
+      appId: response.appId,
+      timestamp: response.timestamp,
+      nonceStr: response.nonceStr,
+      signature: response.signature,
+      jsApiList: [
+          'onMenuShareTimeline',
+          'onMenuShareAppMessage',
+          'onMenuShareQQ',
+          'onMenuShareWeibo',
+          'onMenuShareQZone'
+      ]
     });
+  }
+});
+```
 
   使用Java解析代理网页授权获得的cookie
 
-    Map authInfo = JSON.parseObject(decryptAES(unBase64("cookie value"), getKey("AES key")));
+``` java
+Map authInfo = JSON.parseObject(decryptAES(unBase64("cookie value"), getKey("AES key")));
 
-    // 默认AES key: "vFrItmxI9ct8JbAg"
-    // 配置于config.lua -> cookie_aes_key
+// 默认AES key: "vFrItmxI9ct8JbAg"
+// 配置于config.lua -> cookie_aes_key
 
-    // 依赖方法
+// 依赖方法
 
-    import com.alibaba.fastjson.JSON;
-    import com.google.common.base.Charsets;
-    import javax.crypto.Cipher;
-    import javax.crypto.spec.SecretKeySpec;
-    import java.security.Key;
+import com.alibaba.fastjson.JSON;
+import com.google.common.base.Charsets;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Key;
 
-    public StringBuilder padding(String s, char letter, int repeats) {
-        StringBuilder sb = new StringBuilder(s);
-        while (repeats-- > 0) {
-            sb.append(letter);
-        }
-        return sb;
+public StringBuilder padding(String s, char letter, int repeats) {
+    StringBuilder sb = new StringBuilder(s);
+    while (repeats-- > 0) {
+        sb.append(letter);
     }
+    return sb;
+}
 
-    public String padding(String s) {
-        return padding(s, '=', s.length() % 4).toString();
-    }
+public String padding(String s) {
+    return padding(s, '=', s.length() % 4).toString();
+}
 
-    public byte[] unBase64(String value) {
-        return org.apache.commons.codec.binary.Base64.decodeBase64(padding(value));
-    }
+public byte[] unBase64(String value) {
+    return org.apache.commons.codec.binary.Base64.decodeBase64(padding(value));
+}
 
-    public String string(byte[] bytes) {
-        return new String(bytes, Charsets.UTF_8);
-    }
+public String string(byte[] bytes) {
+    return new String(bytes, Charsets.UTF_8);
+}
 
-    public String decryptAES(byte[] value, Key key) {
-        try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] decrypted = cipher.doFinal(value);
-            return string(decrypted);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+public String decryptAES(byte[] value, Key key) {
+    try {
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] decrypted = cipher.doFinal(value);
+        return string(decrypted);
+    } catch (Exception e) {
+        throw new RuntimeException(e);
     }
+}
 
-    public byte[] bytes(String str) {
-        return str == null ? null : str.getBytes(Charsets.UTF_8);
-    }
+public byte[] bytes(String str) {
+    return str == null ? null : str.getBytes(Charsets.UTF_8);
+}
 
-    public Key keyFromString(String keyString) {
-        return new SecretKeySpec(bytes(keyString), "AES");
-    }
+public Key keyFromString(String keyString) {
+    return new SecretKeySpec(bytes(keyString), "AES");
+}
 
-    public Key getKey(String key) {
-        if (key.length() >= 16) {
-            return keyFromString(key.substring(0, 16));
-        }
-        StringBuilder sb = new StringBuilder(key);
-        while (sb.length() < 16) {
-            sb.append(key);
-        }
-        return keyFromString(sb.toString().substring(0, 16));
+public Key getKey(String key) {
+    if (key.length() >= 16) {
+        return keyFromString(key.substring(0, 16));
     }
+    StringBuilder sb = new StringBuilder(key);
+    while (sb.length() < 16) {
+        sb.append(key);
+    }
+    return keyFromString(sb.toString().substring(0, 16));
+}
+```
