@@ -2,7 +2,6 @@ local modname = "wechat_proxy_access_token"
 local _M = { _VERSION = '0.0.1' }
 _G[modname] = _M
 
-local os_time       = os.time
 local ngx_log       = ngx.log
 local ngx_timer_at  = ngx.timer.at
 
@@ -42,7 +41,7 @@ local mt = {
       require("resty.wechat.utils.redis"):connect(wechat_config.redis):lockProcess(
         "accessTokenLocker",
         function(weredis)
-          if os_time() < tonumber(weredis.redis:ttl(accessTokenKey) or 0) then
+          if 0 < tonumber(weredis.redis:ttl(accessTokenKey) or 0) then
             return
           end
 
@@ -58,7 +57,7 @@ local mt = {
             return
           end
 
-          local ok, err = weredis.redis:setex(accessTokenKey, os_time() + updateTime - 1, resbody.access_token)
+          local ok, err = weredis.redis:setex(accessTokenKey, updateTime - 1, resbody.access_token)
           if not ok then
             ngx_log(ngx.ERR, "failed to set access token: ", err)
             return
@@ -80,7 +79,7 @@ local mt = {
             return
           end
 
-          local ok, err = weredis.redis:setex(jsapiTicketKey, os_time() + updateTime - 1, resbody.ticket)
+          local ok, err = weredis.redis:setex(jsapiTicketKey, updateTime - 1, resbody.ticket)
           if not ok then
             ngx_log(ngx.ERR, "failed to set jsapi ticket: ", err)
             return
