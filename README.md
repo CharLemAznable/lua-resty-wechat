@@ -5,7 +5,7 @@
 目标:
 * 在前置的nginx内做微信代理, 降低内部应用层和微信服务的耦合.
 * 配置微信公众号的自动回复, 在nginx内处理部分用户消息, 减小应用层压力.
-* 统一管理微信公众号API中使用的ACCESS_TOKEN, 作为中控服务器隔离业务层和API实现, 降低ACCESS_TOKEN冲突率, 增加服务稳定性.
+* 统一管理微信公众号API中使用的```access_token```, 作为中控服务器隔离业务层和API实现, 降低```access_token```冲突率, 增加服务稳定性.
 * 部署微信JS-SDK授权回调页面, 减小应用层压力.
 
 ## 子模块说明
@@ -20,21 +20,21 @@
 
   [server](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/server.lua)
 
-  接收微信发出的普通消息和事件推送等请求, 并按配置做出响应, 未做对应配置则按微信要求返回success.
+  接收微信发出的普通消息和事件推送等请求, 并按配置做出响应, 未做对应配置则按微信要求返回```success```.
 
   此部分核心代码由[aCayF/lua-resty-wechat](https://github.com/aCayF/lua-resty-wechat)做重构修改而来.
 
-  使用config.autoreplyurl, 配置后台处理服务地址, 转发处理并响应复杂的微信消息. (依赖[pintsized/lua-resty-http](https://github.com/pintsized/lua-resty-http))
+  使用```config.autoreplyurl```, 配置后台处理服务地址, 转发处理并响应复杂的微信消息. (依赖[pintsized/lua-resty-http](https://github.com/pintsized/lua-resty-http))
 
 ### 作为客户端代理调用微信公众号API
 
   [proxy_access_token](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy_access_token.lua)
 
-  使用Redis缓存AccessToken和jsapi_ticket, 定时自动调用微信服务更新, 支持分布式更新.
+  使用Redis缓存```access_token```和```jsapi_ticket```, 定时自动调用微信服务更新, 支持分布式更新.
 
   [proxy](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy.lua)
 
-  代理调用微信公众平台API接口, 自动添加access_token参数.
+  代理调用微信公众平台API接口, 自动添加```access_token```参数.
 
   [proxy_access_filter](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/lib/resty/wechat/proxy_access_filter.lua)
 
