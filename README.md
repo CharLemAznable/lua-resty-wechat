@@ -2,9 +2,9 @@
 
 [![GitHub license](https://img.shields.io/github/license/CharLemAznable/lua-resty-wechat.svg)](https://github.com/CharLemAznable/lua-resty-wechat/blob/master/LICENSE)
 
-[![GitHub watchers](https://img.shields.io/github/watchers/CharLemAznable/lua-resty-wechat.svg?style=social&label=Watch&maxAge=864000)](https://GitHub.com/CharLemAznable/lua-resty-wechat/watchers/)
-[![GitHub stars](https://img.shields.io/github/stars/CharLemAznable/lua-resty-wechat.svg?style=social&label=Star&maxAge=864000)](https://GitHub.com/CharLemAznable/lua-resty-wechat/stargazers/)
-[![GitHub forks](https://img.shields.io/github/forks/CharLemAznable/lua-resty-wechat.svg?style=social&label=Fork&maxAge=864000)](https://GitHub.com/CharLemAznable/lua-resty-wechat/network/)
+[![GitHub watchers](https://img.shields.io/github/watchers/CharLemAznable/lua-resty-wechat.svg?style=social&label=Watch&maxAge=86400)](https://GitHub.com/CharLemAznable/lua-resty-wechat/watchers/)
+[![GitHub stars](https://img.shields.io/github/stars/CharLemAznable/lua-resty-wechat.svg?style=social&label=Star&maxAge=86400)](https://GitHub.com/CharLemAznable/lua-resty-wechat/stargazers/)
+[![GitHub forks](https://img.shields.io/github/forks/CharLemAznable/lua-resty-wechat.svg?style=social&label=Fork&maxAge=86400)](https://GitHub.com/CharLemAznable/lua-resty-wechat/network/)
 
 使用Lua编写的nginx服务器微信公众平台代理.
 
